@@ -6,9 +6,9 @@ import numpy as np
 import torch
 import cv2
 
+base_dir = "/home/enn/workspace/deep_learning/Traffic_Sign_Classification"
 def DataPrepare():
-    base_dir = "/home/enn/workspace/deep_learning/Traffic_Sign_Classification"
-
+    
     X = []
     y = []
 
@@ -75,11 +75,10 @@ def DataLoaderCreate():
     
     return train_loader, val_loader, test_loader
 
-def TrainModel(model, train_loader):
+def ModelTraining(model, train_loader, test_loader, epochs = 20, save_after_epochs = 20, model_save_path = "model_weights.pth"):
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr = 0.01)
 
-    epochs = 10
     for epoch in range(epochs):
         model.train()
         running_loss = 0.0
@@ -97,3 +96,45 @@ def TrainModel(model, train_loader):
             running_loss += loss.item()
             
         print(f"Epoch {epoch+1}/{epochs}, Loss: {running_loss/len(train_loader):.4f}")
+        
+        if (epoch + 1) % save_after_epochs == 0:
+            torch.save(model.state_dict(), model_save_path)
+    
+    model.eval()
+
+    correct = 0
+    total = 0
+
+    with torch.no_grad():  
+        for inputs, labels in test_loader:
+            outputs = model(inputs)
+
+            _, predicted = torch.max(outputs, 1)
+
+            correct += (predicted == labels).sum().item()
+            total += labels.size(0)  
+
+    accuracy = 100 * correct / total
+    print(f"Accuracy on test set: {accuracy:.2f}%")
+    
+def ImagePrediction(model, image_path):
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (100, 100))  
+
+    image = image.astype('float32') / 255.0  
+    image = torch.tensor(image, dtype=torch.float32).permute(2, 0, 1).unsqueeze(0) 
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    image = image.to(device)
+
+    model.eval()
+
+    with torch.no_grad():
+        outputs = model(image)
+        _, predicted = torch.max(outputs, 1) 
+        
+    labels = ['Danger', 'Instruction', 'Neg', 'Prohibition']
+    predict_label = predicted.item()
+        
+    print(f"This image is about {labels[predict_label]} sign" if predict_label != 3 else "This image isn't about Traffic Sign")
