@@ -10,10 +10,16 @@ git clone https://github.com/LoylP/CS231-TrafficSignClassification
 pip install requirement.txt
 ``` 
 
-***Note***: Change your base_dir in *function.py*.
+***Note***: Change your base_dir in **function.py**.
 
 ## Usage
+To Train Model:
 ```bash
-python main.py
+python train.py 
 ```
+To Predict an Image:
+```bash
+python test.py 
+```
+***Note***: **Train** model **before** starting to **Predict** any image.
 
